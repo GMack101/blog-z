@@ -1,17 +1,41 @@
-<!DOCTYPE html>
+<!DOCTYPE html> <!--This is a comment-->
 <html>
 
         <head>
                 <title></title>
+                <style>
+                  .error{
+                    color:red;
+                  }
+                </style>
             </head>
         <body>
+            <a href='/'>Home</a>
             <a href="/blog">Main Page</a>
             <a href="/newpost">New Post</a>
-            
-        
-            {% block content %}
-            {% endblock %}
-        
+           
+            <div style='float: right'>
+                    {% if 'username' in session %}
+                      {{ session['username'] }}
+                      <form action="/logout" method="post" id='logout'>
+                        <input type="submit" value="Log Out" />
+                      </form>
+                    {% else %}
+                      <a href="/login">login</a> | 
+                      <a href="/logout">logout</a>
+
+                    {% endif %}
+         </div>
+         {% with messages = get_flashed_messages(with_categories=True) %}        
+         <ul>        {% for category,message in messages %}            
+           <li class="{{category}}">{{message}}</li>        
+           {% endfor %}        
+          </ul>    
+          {% endwith %}        
+          {% block content %}        
+          {% endblock %}
+
+
         </body>
 
 
