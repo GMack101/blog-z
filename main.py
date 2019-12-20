@@ -43,23 +43,45 @@ def index():
 
 @app.route('/login', methods=['GET', 'POST']) 
 def login():
+    # error variable set to blank
+
     if request.method == 'POST':
         
         username = request.form['username']
         password = request.form['password']
         user = User.query.filter_by(username=username).first()
+
+        if not user:
+            username_error = "User does not exist."
+
+        if username == "":
+                username_error = "Please enter your username."
+
+        if password == "":
+            password_error = "Please enter your password."
+
+        if user and user.password != password:
+            password_error = "That is the wrong password."
+
         if user and user.password==password:
             session['username'] = user.username
-            return redirect('/')
+            return redirect('/blog')
+
         else:
-            flash('wrong username')
-            if user != User.query.filter_by(username=username):
+            # change error variable
+            flash('wrong username or password', 'error')
+        
+        #if user != User.query.filter_by(username=username):
                  
-                flash('Logged in') 
-                return redirect('/newpost')
+                #flash('Logged in') 
+                #return redirect('/newpost')
 
       # if username not in database redirect to login with "user doesnt exist" message 
     #  HTML -  if user doesn't have an account provide link to "create account" and redirect to register page
+
+
+    # pass error variable into template. 
+    # make sure template can handle error variable using jinja2
     return render_template('login.html')
 
 
@@ -68,34 +90,45 @@ def login():
 # reimplement code from User-signup to validate registration information
 @app.route('/register', methods = ['POST', 'GET']) 
 def register():
-    if request.method == "GET":
-        return render_template('signup.html') 
-    else:
-        if request.method == "POST":
-            username = request.form['username']
-            password = request.form['password']
-            verify = request.form['verify']
-            username_db_count = User.query.filter_by(username=username).count() 
-            if username == "":
-                flash("Enter username", "error")
-                return render_template("signup.html")
-            if username_db_count > 0:
-                flash("Username invalid", 'error')
-                return redirect("/register")
+    
+    if request.method == "POST":
+        username = request.form['username']
+        password = request.form['password']
+        verify = request.form['verify']
+        password_error = ""
+        username_error = ""
+        
+        username_db_count = User.query.filter_by(username=username).count() 
+        
+            
 
-            if password == "":
-                flash("Enter password",'error')
-                return redirect('/register') 
+        if username_db_count < 0 or username.strip()=="":
+            username_error="That's not a valid username"
+            
+        
 
-            if verify != password: 
-                flash("password don't much", 'error')
-                return redirect("/register")     
+        if password.strip() == "":
+            password_error="Invalid Password"
+            
 
+
+
+        if verify != password: 
+            password_error="Invalid Password"
+            
+
+                
+        if username_error!="" or password_error!="":
+            return render_template('signup.html', password_error=password_error, username_error=username_error)
+                
+        else:
             user = User(username=username,password=password) 
             db.session.add(user)
             db.session.commit() 
             session["username"] = user.username
             return redirect("/")
+
+    return render_template("signup.html")
 
 @app.route("/logout",methods=['POST'])
 def logout():
@@ -115,20 +148,15 @@ def require_login():
     if request.endpoint not in allowed_routes and 'username' not in session:
         return redirect('/login')
 
-
+ 
 @app.route('/newpost', methods=['POST', 'GET'])
 def add_post():
     title_error=''
-    body_error=''
+    body_error=""
 
     if request.method == 'POST':
         title = request.form["title"]
         body = request.form["body"]
-        owner = User.query.filter_by(username=session['username']).first() 
-        """ User.query.filter_by(username=session['user']).first() in Layman's : 
-        Go to the User table in the database and compare the 'username' column
-        in the database with the 'user' variable stored using session."""
-        
 
         if title == "":
             title_error= "Please insert title"
@@ -139,38 +167,41 @@ def add_post():
 
 
         else: 
-
+            owner = User.query.filter_by(username=session['username']).first()
             new_post= Blog(title, body, owner)
-            
             db.session.add(new_post)
             db.session.commit()
             return redirect('/blog?id={0}'.format(new_post.id))
-            
 
-    #new_post =Blog.query.filter_by(owner=owner).all()
-    
+
+       
     return render_template('new-post.html')
 
-@app.route('/blog', methods=['GET', 'POST']) 
-def main():
+#@app.route('/blog', methods=['GET', 'POST']) 
+#def main():
     #In this app route we are trying to return a Blog object.
-    user = request.args.get('username')
+
+
+
+
+
+
+@app.route('/blog', methods=['GET'])
+def blog():
+    user= request.args.get("username")
     username = User.query.filter_by(username=user).first()
     if username:
-        #Watch Get It Done, and think of these:
-        #You are trying to query a User object here. You want to query a Blog object instead.
-        #The query syntax needs to be modified to correctly get the id of a blog.
+        bloglist = Blog.query.filter_by(owner=username).all()
         
-        blog_list = Blog.query.filter_by(owner=username)
-        return render_template('blog.html',blog_list=blog_list)
+        return render_template('blog.html',bloglist=bloglist)
     else:
         bloglist=Blog.query.all()
-        blog_id=request.args.get('id')
+        blog_id=request.args.get('id') 
         blog_post= Blog.query.get(blog_id)
-        return render_template('blog.html', blog_list=bloglist, blog_post=blog_post)
-
-   
-       
+        return render_template('blog.html', blog_post=blog_post, bloglist=bloglist)
+    
+    bloglist = Blog.query.all()
+    return render_template('blog.html',bloglist=bloglist)
 
         
 if __name__ == '__main__':

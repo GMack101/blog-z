@@ -1,15 +1,16 @@
 {%extends "base.html" %}
 {% block content %}
 
+<h1>Build a blog</h1>
+
 {% if blog_post %}
 <h2>{{blog_post.title}}</h2>
 <p>{{blog_post.body}}</p>
+
+
+
 {% else %}
-
-<h1>Build a blog</h1>
-
-<!-- the url will need to go to a blog-view template! it's a simple practically blank template, ez clap-->
-{% for blog in blog_list %}
+{% for blog in bloglist %}
     <h2><a href="/blog?id={{blog.id}}">{{blog.title}}</a></h2> 
     <p>{{blog.body}}</p>
     <p>written by: <a href="/blog?username={{blog.owner}}">{{blog.owner}}</a></p>
