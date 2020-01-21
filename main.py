@@ -114,6 +114,7 @@ def register():
 
 
         if verify != password: 
+            
             password_error="Invalid Password"
             
 
@@ -122,7 +123,7 @@ def register():
             return render_template('signup.html', password_error=password_error, username_error=username_error)
                 
         else:
-            user = User(username=username,password=password) 
+            user = User(username,password) 
             db.session.add(user)
             db.session.commit() 
             session["username"] = user.username
